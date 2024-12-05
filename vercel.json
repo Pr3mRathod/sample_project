@@ -8,12 +8,12 @@
   ],
   "routes": [
     {
-      "src": "/api/log_user_details",
-      "dest": "/api/log_user_details.py"
+      "src": "/",
+      "dest": "/api/index"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "src": "/api/(.*)",
+      "dest": "/api/log_user_details.py"
     }
   ]
 }

@@ -14,12 +14,12 @@ mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["user_data_db"]
 collection = db["user_details"]
 
-app = Flask(__name__, static_folder="public")
+app = Flask(__name__, static_folder=os.path.join(os.pardir, 'public'))
 
-# Serve index.html when accessing the root
-@app.route("/")
+@app.route('/')
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    return send_from_directory(app.static_folder, 'index.html')
+
 
 def get_ip_info():
     try:
