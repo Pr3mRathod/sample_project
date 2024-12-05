@@ -123,28 +123,22 @@ def collect_user_details(request):
 @app.route('/api/log_user_details', methods=['POST'])
 def log_user_details():
     try:
-        # Log incoming request for debugging
-        print(f"Received request: {request.json}")
-
         # Collect user details
         user_details = collect_user_details(request)
-        
-        # Log collected details
-        print(f"Collected user details: {user_details}")
         
         # Insert into MongoDB collection
         collection.insert_one(user_details)
         
-        # Return a success message
+        # Return success message as JSON
         return jsonify({"message": "User details collected and stored successfully"}), 200
 
     except PyMongoError as e:
-        # MongoDB related errors
-        return jsonify({"error": "Database error: " + str(e)}), 500
+        # Return a JSON error message if a MongoDB error occurs
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
     except Exception as e:
-        # Catch other exceptions
+        # Log the exception and return a JSON error message for any other errors
         print(f"Error occurred: {e}")
-        return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
