@@ -24,18 +24,27 @@
           timestamp: new Date().toISOString(),
         }),
       })
-        .then(response => response.json()) // Expect JSON response
-        .then(data => {
-          if (data.message) {
-            alert(data.message); // Show success message
-            console.log("User Details:", data.data); // Log data
-          } else if (data.error) {
-            alert('Error: ' + data.error); // Show error
-          }
-        })
-        .catch(error => {
-          alert('Error: ' + error);
-        });
+      .then(response => {
+        // Check if the response is valid JSON
+        if (!response.ok) {
+          return Promise.reject('Failed to log user details. HTTP status: ' + response.status);
+        }
+        return response.json();  // Expect JSON response
+      })
+      .then(data => {
+        // Handle successful response
+        if (data.message) {
+          alert(data.message); // Show success message
+          console.log("User Details:", data); // Log response data to console
+        } else if (data.error) {
+          alert('Error: ' + data.error); // Show error if any
+        }
+      })
+      .catch(error => {
+        // Handle errors in the fetch process
+        alert('Error: ' + error);
+        console.error('API request failed:', error);
+      });
     }
   </script>
 </body>
