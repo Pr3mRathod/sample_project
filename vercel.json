@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/handler.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/handler", "dest": "api/handler.py" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
+}
