@@ -14,12 +14,12 @@ mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["user_data_db"]
 collection = db["user_details"]
 
-app = Flask(__name__, static_folder=os.path.abspath('../public'))
+app = Flask(__name__, static_folder='../public')  # Static files are in ../public
 
+# Serve the static index.html
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
-
 
 def get_ip_info():
     try:
@@ -114,6 +114,7 @@ def collect_user_details(request):
     data["network_info"] = get_network_info()
     data.update(get_browser_info(request.headers))
     return data
+
 
 @app.route('/api/log_user_details', methods=['POST'])
 def log_user_details():

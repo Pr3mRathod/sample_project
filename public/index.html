@@ -6,41 +6,37 @@
   <title>Log User Details</title>
 </head>
 <body>
-
   <h1>Log User Details</h1>
 
-  <!-- Button to trigger the logging -->
+  <!-- Button to trigger the API call -->
   <button id="logButton" onclick="logUserDetails()">Log User Details</button>
 
   <script>
-    // Define the logUserDetails function
+    // Function to send user details to the backend API
     function logUserDetails() {
-      // Prepare the request to send user details
-      fetch('/api/log_user_details', {
+      fetch('/api/log_user_details', { // Relative URL for API
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // You can add user data or system information here if needed
           user_agent: navigator.userAgent,
           timestamp: new Date().toISOString(),
         }),
       })
-      .then(response => response.json())
-      .then(data => {
-        // Handle success or error here
-        if (data.message) {
-          alert(data.message);  // If successful
-        } else if (data.error) {
-          alert("Error: " + data.error);  // If there's an error
-        }
-      })
-      .catch(error => {
-        alert('Error: ' + error);
-      });
+        .then(response => response.json()) // Expect JSON response
+        .then(data => {
+          if (data.message) {
+            alert(data.message); // Show success message
+            console.log("User Details:", data.data); // Log data
+          } else if (data.error) {
+            alert('Error: ' + data.error); // Show error
+          }
+        })
+        .catch(error => {
+          alert('Error: ' + error);
+        });
     }
   </script>
-
 </body>
 </html>
