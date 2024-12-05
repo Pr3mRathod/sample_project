@@ -6,7 +6,9 @@ import psutil
 import uuid
 import requests
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError  # Correct import
 from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS  # CORS import
 
 # MongoDB connection
 MONGO_URI = os.getenv("MONGODB_URI")
@@ -15,6 +17,9 @@ db = mongo_client["user_data_db"]
 collection = db["user_details"]
 
 app = Flask(__name__, static_folder='../public')  # Static files are in ../public
+
+# Enable CORS for all routes
+CORS(app)
 
 # Serve the static index.html
 @app.route('/')
@@ -115,27 +120,31 @@ def collect_user_details(request):
     data.update(get_browser_info(request.headers))
     return data
 
-
 @app.route('/api/log_user_details', methods=['POST'])
 def log_user_details():
     try:
-        # Collect user details (assuming you have a function like collect_user_details)
+        # Log incoming request for debugging
+        print(f"Received request: {request.json}")
+
+        # Collect user details
         user_details = collect_user_details(request)
+        
+        # Log collected details
+        print(f"Collected user details: {user_details}")
         
         # Insert into MongoDB collection
         collection.insert_one(user_details)
         
-        # Return a success message with status code 200
+        # Return a success message
         return jsonify({"message": "User details collected and stored successfully"}), 200
 
     except PyMongoError as e:
         # MongoDB related errors
         return jsonify({"error": "Database error: " + str(e)}), 500
     except Exception as e:
-        # Catch other exceptions and log them
+        # Catch other exceptions
         print(f"Error occurred: {e}")
         return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
 
-        
 if __name__ == "__main__":
     app.run(debug=True)
