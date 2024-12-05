@@ -1,11 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Logger</title>
-    <script src="script.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log User Details</title>
 </head>
 <body>
-    <h1>User Logger</h1>
-    <p>Your data is not being logged </p>
+
+  <h1>Log User Details</h1>
+
+  <!-- Button to trigger the logging -->
+  <button id="logButton" onclick="logUserDetails()">Log User Details</button>
+
+  <script>
+    // Define the logUserDetails function
+    function logUserDetails() {
+      // Prepare the request to send user details
+      fetch('/api/log_user_details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          // You can add user data or system information here if needed
+          user_agent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Handle success or error here
+        if (data.message) {
+          alert(data.message);  // If successful
+        } else if (data.error) {
+          alert("Error: " + data.error);  // If there's an error
+        }
+      })
+      .catch(error => {
+        alert('Error: ' + error);
+      });
+    }
+  </script>
+
 </body>
 </html>

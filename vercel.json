@@ -1,10 +1,19 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/handler.py", "use": "@vercel/python" }
+    {
+      "src": "api/log_user_details.py",
+      "use": "@vercel/python"
+    }
   ],
   "routes": [
-    { "src": "/api/handler", "dest": "api/handler.py" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+    {
+      "src": "/api/log_user_details",
+      "dest": "/api/log_user_details.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
   ]
 }

@@ -6,12 +6,20 @@ import psutil
 import uuid
 import requests
 from pymongo import MongoClient
+from flask import Flask, jsonify, request, send_from_directory
 
 # MongoDB connection
-MONGO_URI = os.getenv("MONGODB_URI", "mongodb+srv://prem_rathod:<Pr3mRath0d>@sample.7wyhc.mongodb.net/?retryWrites=true&w=majority&appName=sample")
+MONGO_URI = os.getenv("MONGODB_URI")
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["user_data_db"]
 collection = db["user_details"]
+
+app = Flask(__name__, static_folder="public")
+
+# Serve index.html when accessing the root
+@app.route("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
 
 def get_ip_info():
     try:
@@ -90,7 +98,7 @@ def get_network_info():
 
 def get_browser_info(request_headers):
     try:
-        return {"user_agent": request_headers.get("user-agent")}
+        return {"user_agent": request_headers.get("User-Agent")}
     except Exception as e:
         return {"error": f"Could not fetch user-agent: {e}"}
 
@@ -107,12 +115,14 @@ def collect_user_details(request):
     data.update(get_browser_info(request.headers))
     return data
 
-def handler(request):
-    if request.method == "POST":
-        try:
-            user_details = collect_user_details(request)
-            collection.insert_one(user_details)
-            return json.dumps({"message": "User details collected and stored successfully"}), 200
-        except Exception as e:
-            return json.dumps({"error": str(e)}), 500
-    return json.dumps({"error": "Invalid request method"}), 405
+@app.route('/api/log_user_details', methods=['POST'])
+def log_user_details():
+    try:
+        user_details = collect_user_details(request)
+        collection.insert_one(user_details)
+        return jsonify({"message": "User details collected and stored successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
