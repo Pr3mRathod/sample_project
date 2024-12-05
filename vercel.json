@@ -2,18 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/log_user_details.py",
+      "src": "api/app.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/",
-      "dest": "/api/index"
+      "src": "/api/(.*)",       
+      "dest": "/api/app.py"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/log_user_details.py"
+      "src": "/(.*)",          
+      "dest": "/public/$1"
     }
   ]
 }

@@ -14,7 +14,7 @@ mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["user_data_db"]
 collection = db["user_details"]
 
-app = Flask(__name__, static_folder=os.path.join(os.pardir, 'public'))
+app = Flask(__name__, static_folder=os.path.abspath('../public'))
 
 @app.route('/')
 def index():
