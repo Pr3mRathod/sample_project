@@ -11,13 +11,11 @@ from flask_cors import CORS
 # Load environment variables
 from dotenv import load_dotenv
 
-load_dotenv()  # Load the .env file from the root folder
+load_dotenv()
 
 # MongoDB setup
 try:
-    MONGO_URI = os.getenv("MONGODB_URI")
-    if not MONGO_URI:
-        raise ValueError("MONGODB_URI environment variable is not set")
+    MONGO_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")  # Default URI fallback
     mongo_client = MongoClient(MONGO_URI)
     mongo_client.server_info()  # Test connection
     print("MongoDB connection successful")
@@ -26,7 +24,7 @@ except Exception as e:
     raise
 
 # Initialize Flask app
-app = Flask(__name__, static_folder='../public')  # Serve from the public folder
+app = Flask(__name__, static_folder='../public')
 CORS(app)
 
 # MongoDB collection
@@ -36,7 +34,6 @@ collection = db["logs"]
 @app.route('/')
 def index():
     try:
-        # Serve the index.html from the 'public' folder
         return send_from_directory(app.static_folder, 'index.html')
     except Exception as e:
         return Response(
@@ -45,23 +42,22 @@ def index():
             mimetype='application/json'
         )
 
-# Collect user details function
 def collect_user_details(request):
     data = {}
     try:
-        # Collect user details sent from frontend
-        data["user_agent"] = request.headers.get("User-Agent")
-        data["timestamp"] = request.json.get("timestamp")
-        data["browser_language"] = request.json.get("browser_language")
-        data["screen_width"] = request.json.get("screen_width")
-        data["screen_height"] = request.json.get("screen_height")
-        data["timezone"] = request.json.get("timezone")
-        data["battery_level"] = request.json.get("battery_level")
+        # Required fields validation
+        required_fields = [
+            "timestamp", "browser_language", "screen_width",
+            "screen_height", "timezone", "battery_level", "ip",
+            "latitude", "longitude"
+        ]
+        for field in required_fields:
+            if field not in request.json:
+                raise ValueError(f"Missing required field: {field}")
 
-        # Geolocation data
-        data["ip"] = request.json.get("ip")
-        data["latitude"] = request.json.get("latitude")
-        data["longitude"] = request.json.get("longitude")
+        # Collect user details sent from frontend
+        data = {field: request.json.get(field) for field in required_fields}
+        data["user_agent"] = request.headers.get("User-Agent")
 
         # Collect system information
         data["system_info"] = get_system_info()
@@ -69,42 +65,55 @@ def collect_user_details(request):
         data["memory_info"] = get_memory_info()
         data["disk_info"] = get_disk_info()
 
+        # Generate a unique session ID
+        data["session_id"] = str(uuid.uuid4())
+    except ValueError as ve:
+        print(f"Validation error: {ve}")
+        data["error"] = str(ve)
     except Exception as e:
         print(f"Error collecting user details: {e}")
+        data["error"] = f"Unexpected error: {e}"
     return data
 
 @app.route('/api/log_user_details', methods=['POST'])
 def log_user_details():
     try:
-        print("Request received:", request.json)  # Log the incoming request
+        if not request.is_json:
+            raise ValueError("Request content type must be JSON")
+
         user_details = collect_user_details(request)
-        print("Collected user details:", user_details)  # Log collected details
-        
-        # Insert user details into MongoDB collection
+
+        if "error" in user_details:
+            raise ValueError(user_details["error"])
+
         result = collection.insert_one(user_details)
-        print("MongoDB insert result:", result.inserted_id)  # Log the result of the insert
-        
         return Response(
-            json.dumps({"message": "Data sent successfully!"}),
+            json.dumps({"message": "Data sent successfully!", "id": str(result.inserted_id)}),
             status=200,
             mimetype='application/json'
         )
-    except PyMongoError as e:
-        print(f"MongoDB error: {e}")  # Log MongoDB errors
+    except ValueError as ve:
+        print(f"Validation error: {ve}")
         return Response(
-            json.dumps({"error": f"Database error: {e}"}),
+            json.dumps({"error": f"Validation error: {ve}"}),
+            status=400,
+            mimetype='application/json'
+        )
+    except PyMongoError as pe:
+        print(f"MongoDB error: {pe}")
+        return Response(
+            json.dumps({"error": f"Database error: {pe}"}),
             status=500,
             mimetype='application/json'
         )
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Log unexpected errors
+        print(f"Unexpected error: {e}")
         return Response(
             json.dumps({"error": f"Unexpected error: {e}"}),
             status=500,
             mimetype='application/json'
         )
 
-# Helper functions to collect various system and user details
 def get_system_info():
     try:
         return {
@@ -121,9 +130,10 @@ def get_system_info():
 
 def get_cpu_info():
     try:
+        freq = psutil.cpu_freq()
         return {
             "cpu_count": psutil.cpu_count(logical=True),
-            "cpu_freq": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None,
+            "cpu_freq": freq._asdict() if freq else None,
             "cpu_usage": psutil.cpu_percent(interval=1),
         }
     except Exception as e:
@@ -156,6 +166,5 @@ def get_disk_info():
         print(f"Error fetching disk info: {e}")
         return {"error": f"Could not fetch disk info: {e}"}
 
-# Run the app on port 5000
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
