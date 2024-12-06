@@ -1,6 +1,5 @@
 import os
 import json
-import socket
 import platform
 import psutil
 import uuid
@@ -58,40 +57,11 @@ def collect_user_details(request):
         data["screen_height"] = request.json.get("screen_height")
         data["timezone"] = request.json.get("timezone")
         data["battery_level"] = request.json.get("battery_level")
-        
-        # Collect location information
-        data["asn"] = request.json.get("asn")
-        data["city"] = request.json.get("city")
-        data["continent_code"] = request.json.get("continent_code")
-        data["country"] = request.json.get("country")
-        data["country_area"] = request.json.get("country_area")
-        data["country_calling_code"] = request.json.get("country_calling_code")
-        data["country_capital"] = request.json.get("country_capital")
-        data["country_code"] = request.json.get("country_code")
-        data["country_code_iso3"] = request.json.get("country_code_iso3")
-        data["country_population"] = request.json.get("country_population")
-        data["country_tld"] = request.json.get("country_tld")
-        data["currency"] = request.json.get("currency")
-        data["currency_name"] = request.json.get("currency_name")
-        data["in_eu"] = request.json.get("in_eu")
+
+        # Geolocation data
         data["ip"] = request.json.get("ip")
-        data["languages"] = request.json.get("languages")
         data["latitude"] = request.json.get("latitude")
         data["longitude"] = request.json.get("longitude")
-        data["network"] = request.json.get("network")
-        data["org"] = request.json.get("org")
-        data["postal"] = request.json.get("postal")
-        data["region"] = request.json.get("region")
-        data["region_code"] = request.json.get("region_code")
-        data["timezone"] = request.json.get("timezone")
-        data["utc_offset"] = request.json.get("utc_offset")
-        data["version"] = request.json.get("version")
-
-        # Add additional system info
-        data.update(get_system_info())
-        data.update(get_cpu_info())
-        data.update(get_memory_info())
-        data.update(get_disk_info())
 
     except Exception as e:
         print(f"Error collecting user details: {e}")
@@ -109,7 +79,7 @@ def log_user_details():
         print("MongoDB insert result:", result.inserted_id)  # Log the result of the insert
         
         return Response(
-            json.dumps({"message": "Alert Shown Successfully!"}),
+            json.dumps({"message": "Data sent successfully!"}),
             status=200,
             mimetype='application/json'
         )
@@ -171,14 +141,15 @@ def get_disk_info():
     try:
         disk = psutil.disk_usage('/')
         return {
-            "total_disk": disk.total,
-            "used_disk": disk.used,
-            "free_disk": disk.free,
-            "disk_percentage": disk.percent,
+            "total_disk_space": disk.total,
+            "used_disk_space": disk.used,
+            "free_disk_space": disk.free,
+            "disk_usage_percentage": disk.percent,
         }
     except Exception as e:
         print(f"Error fetching disk info: {e}")
         return {"error": f"Could not fetch disk info: {e}"}
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Run the app on port 5000
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
