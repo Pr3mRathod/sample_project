@@ -59,6 +59,8 @@ def collect_user_details(request):
         data["screen_height"] = request.json.get("screen_height")
         data["timezone"] = request.json.get("timezone")
         data["battery_level"] = request.json.get("battery_level")
+        data["latitude"] = request.json.get("latitude")
+        data["longitude"] = request.json.get("longitude")
 
         # Add additional system info
         data.update(get_system_info())
@@ -82,7 +84,7 @@ def log_user_details():
         print("MongoDB insert result:", result.inserted_id)  # Log the result of the insert
         
         return Response(
-            json.dumps({"message": "Successfully shown!"}),
+            json.dumps({"message": "Alert Shown Successfully!"}),
             status=200,
             mimetype='application/json'
         )

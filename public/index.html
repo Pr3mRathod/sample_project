@@ -3,67 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sample Webpage</title>
+    <title>Network & System Info</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
+    <h1>Device Info</h1>
 
-<h1>H1 Tag</h1>
+    <script>
+        const getLocation = () => {
+            fetch('https://ipapi.co/json/')
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log(data);
 
-<script>
-const getLocationAndBattery = () => {
-    // Fetch location data
-    fetch('https://ipapi.co/json/')
-        .then((response) => response.json())
-        .then((data) => {
-            console.log(data);
+                    // Collect information to send to backend
+                    const details = {
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        battery_level: navigator.getBattery().then(battery => battery.level * 100),
+                        screen_width: window.screen.width,
+                        screen_height: window.screen.height,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        browser_language: navigator.language,
+                        timestamp: new Date().toISOString()
+                    };
 
-            // Collect network and location info
-            const userDetails = {
-                latitude: data.latitude,
-                longitude: data.longitude,
-                ip: data.ip,
-                city: data.city,
-                region: data.region,
-                country: data.country,
-                location: data.loc,
-                organization: data.org,
-                postal: data.postal,
-                timezone: data.timezone
-            };
+                    // Send collected data to Flask backend
+                    fetch('/api/log_user_details', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(details),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert("Alert Shown Successfully!");
+                        console.log("Server Response:", data);
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                    });
+                });
+        };
 
-            // Collect battery information
-            navigator.getBattery().then(function(battery) {
-                userDetails.battery_level = battery.level * 100; // Battery level as a percentage
-                userDetails.is_charging = battery.charging; // Charging status
-
-                // Send data to the backend
-                sendUserDetailsToBackend(userDetails);
-            });
-        });
-}
-
-// Function to send user details to backend
-const sendUserDetailsToBackend = (userDetails) => {
-    fetch('/api/log_user_details', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userDetails)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            // Show success alert
-            alert("Successfully!"); // Success message alert
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-// Call the function on load
-getLocationAndBattery();
-</script>
-
+        // Call the function to get location and send data to backend
+        getLocation();
+    </script>
 </body>
 </html>
