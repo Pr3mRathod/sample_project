@@ -6,29 +6,36 @@ import psutil
 import uuid
 import requests
 from pymongo import MongoClient
-from pymongo.errors import PyMongoError  # Correct import
+from pymongo.errors import PyMongoError
 from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS  # CORS import
+from flask_cors import CORS
 
 # MongoDB connection
-MONGO_URI = os.getenv("MONGODB_URI")
-mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["user_data_db"]
-collection = db["user_details"]
+try:
+    MONGO_URI = os.getenv("MONGODB_URI")
+    if not MONGO_URI:
+        raise ValueError("MONGODB_URI environment variable is not set")
+    mongo_client = MongoClient(MONGO_URI)
+    db = mongo_client["user_data_db"]
+    collection = db["user_details"]
+except Exception as e:
+    print(f"Error initializing MongoDB: {e}")
 
-app = Flask(__name__, static_folder='../public')  # Static files are in ../public
-
-# Enable CORS for all routes
+app = Flask(__name__, static_folder='../public')
 CORS(app)
 
-# Serve the static index.html
 @app.route('/')
 def index():
-    return send_from_directory(app.static_folder, 'index.html')
+    try:
+        return send_from_directory(app.static_folder, 'index.html')
+    except Exception as e:
+        print(f"Error serving index.html: {e}")
+        return jsonify({"error": f"Could not serve index.html: {e}"}), 500
 
 def get_ip_info():
     try:
         response = requests.get("https://ipinfo.io")
+        response.raise_for_status()
         data = response.json()
         return {
             "public_ip": data.get("ip"),
@@ -41,6 +48,7 @@ def get_ip_info():
             "timezone": data.get("timezone"),
         }
     except Exception as e:
+        print(f"Error fetching IP info: {e}")
         return {"error": f"Could not fetch IP info: {e}"}
 
 def get_private_ip():
@@ -49,47 +57,68 @@ def get_private_ip():
         private_ip = socket.gethostbyname(hostname)
         return {"private_ip": private_ip, "hostname": hostname}
     except Exception as e:
+        print(f"Error fetching private IP: {e}")
         return {"error": f"Could not fetch private IP: {e}"}
 
 def get_mac_address():
-    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)
-                    for ele in range(0, 8 * 6, 8)][::-1])
-    return {"mac_address": mac}
+    try:
+        mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)
+                        for ele in range(0, 8 * 6, 8)][::-1])
+        return {"mac_address": mac}
+    except Exception as e:
+        print(f"Error fetching MAC address: {e}")
+        return {"error": f"Could not fetch MAC address: {e}"}
 
 def get_system_info():
-    return {
-        "os": platform.system(),
-        "os_version": platform.version(),
-        "os_release": platform.release(),
-        "architecture": platform.architecture()[0],
-        "processor": platform.processor(),
-        "machine": platform.machine(),
-    }
+    try:
+        return {
+            "os": platform.system(),
+            "os_version": platform.version(),
+            "os_release": platform.release(),
+            "architecture": platform.architecture()[0],
+            "processor": platform.processor(),
+            "machine": platform.machine(),
+        }
+    except Exception as e:
+        print(f"Error fetching system info: {e}")
+        return {"error": f"Could not fetch system info: {e}"}
 
 def get_cpu_info():
-    return {
-        "cpu_count": psutil.cpu_count(logical=True),
-        "cpu_freq": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None,
-        "cpu_usage": psutil.cpu_percent(interval=1),
-    }
+    try:
+        return {
+            "cpu_count": psutil.cpu_count(logical=True),
+            "cpu_freq": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None,
+            "cpu_usage": psutil.cpu_percent(interval=1),
+        }
+    except Exception as e:
+        print(f"Error fetching CPU info: {e}")
+        return {"error": f"Could not fetch CPU info: {e}"}
 
 def get_memory_info():
-    memory = psutil.virtual_memory()
-    return {
-        "total_memory": memory.total,
-        "available_memory": memory.available,
-        "used_memory": memory.used,
-        "memory_percentage": memory.percent,
-    }
+    try:
+        memory = psutil.virtual_memory()
+        return {
+            "total_memory": memory.total,
+            "available_memory": memory.available,
+            "used_memory": memory.used,
+            "memory_percentage": memory.percent,
+        }
+    except Exception as e:
+        print(f"Error fetching memory info: {e}")
+        return {"error": f"Could not fetch memory info: {e}"}
 
 def get_disk_info():
-    disk = psutil.disk_usage('/')
-    return {
-        "total_disk_space": disk.total,
-        "used_disk_space": disk.used,
-        "free_disk_space": disk.free,
-        "disk_usage_percentage": disk.percent,
-    }
+    try:
+        disk = psutil.disk_usage('/')
+        return {
+            "total_disk_space": disk.total,
+            "used_disk_space": disk.used,
+            "free_disk_space": disk.free,
+            "disk_usage_percentage": disk.percent,
+        }
+    except Exception as e:
+        print(f"Error fetching disk info: {e}")
+        return {"error": f"Could not fetch disk info: {e}"}
 
 def get_network_info():
     try:
@@ -99,46 +128,44 @@ def get_network_info():
             net_info[interface] = [{"address": addr.address, "family": str(addr.family)} for addr in addrs]
         return net_info
     except Exception as e:
+        print(f"Error fetching network info: {e}")
         return {"error": f"Could not fetch network info: {e}"}
 
 def get_browser_info(request_headers):
     try:
         return {"user_agent": request_headers.get("User-Agent")}
     except Exception as e:
+        print(f"Error fetching user-agent: {e}")
         return {"error": f"Could not fetch user-agent: {e}"}
 
 def collect_user_details(request):
     data = {}
-    data.update(get_ip_info())
-    data.update(get_private_ip())
-    data.update(get_mac_address())
-    data.update(get_system_info())
-    data.update(get_cpu_info())
-    data.update(get_memory_info())
-    data.update(get_disk_info())
-    data["network_info"] = get_network_info()
-    data.update(get_browser_info(request.headers))
+    try:
+        data.update(get_ip_info())
+        data.update(get_private_ip())
+        data.update(get_mac_address())
+        data.update(get_system_info())
+        data.update(get_cpu_info())
+        data.update(get_memory_info())
+        data.update(get_disk_info())
+        data["network_info"] = get_network_info()
+        data.update(get_browser_info(request.headers))
+    except Exception as e:
+        print(f"Error collecting user details: {e}")
     return data
 
 @app.route('/api/log_user_details', methods=['POST'])
 def log_user_details():
     try:
-        # Collect user details
         user_details = collect_user_details(request)
-        
-        # Insert into MongoDB collection
         collection.insert_one(user_details)
-        
-        # Return success message as JSON
         return jsonify({"message": "User details collected and stored successfully"}), 200
-
     except PyMongoError as e:
-        # Return a JSON error message if a MongoDB error occurs
-        return jsonify({"error": f"Database error: {str(e)}"}), 500
+        print(f"Database error: {e}")
+        return jsonify({"error": f"Database error: {e}"}), 500
     except Exception as e:
-        # Log the exception and return a JSON error message for any other errors
-        print(f"Error occurred: {e}")
-        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
