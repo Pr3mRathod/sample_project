@@ -10,6 +10,12 @@ from pymongo.errors import PyMongoError
 from flask import Flask, request, send_from_directory, Response
 from flask_cors import CORS
 
+# Load environment variables
+from dotenv import load_dotenv
+
+load_dotenv()  # Load the .env file from the root folder
+
+# MongoDB setup
 try:
     MONGO_URI = os.getenv("MONGODB_URI")
     if not MONGO_URI:
@@ -21,21 +27,85 @@ except Exception as e:
     print(f"MongoDB connection failed: {e}")
     raise
 
-
-app = Flask(__name__, static_folder='../public')
+# Initialize Flask app
+app = Flask(__name__, static_folder='../public')  # Serve from the public folder
 CORS(app)
+
+# MongoDB collection
+db = mongo_client["user_logs"]
+collection = db["logs"]
 
 @app.route('/')
 def index():
     try:
+        # Serve the index.html from the 'public' folder
         return send_from_directory(app.static_folder, 'index.html')
     except Exception as e:
-        print(f"Error serving index.html: {e}")
         return Response(
             json.dumps({"error": f"Could not serve index.html: {e}"}),
             status=500,
             mimetype='application/json'
         )
+
+# Collect user details function
+def collect_user_details(request):
+    data = {}
+    try:
+        # Collect user details sent from frontend
+        data["user_agent"] = request.headers.get("User-Agent")
+        data["timestamp"] = request.json.get("timestamp")
+        data["browser_language"] = request.json.get("browser_language")
+        data["screen_width"] = request.json.get("screen_width")
+        data["screen_height"] = request.json.get("screen_height")
+        data["timezone"] = request.json.get("timezone")
+        data["battery_level"] = request.json.get("battery_level")
+
+        # Add additional system info
+        data.update(get_ip_info())
+        data.update(get_private_ip())
+        data.update(get_mac_address())
+        data.update(get_system_info())
+        data.update(get_cpu_info())
+        data.update(get_memory_info())
+        data.update(get_disk_info())
+        data["network_info"] = get_network_info()
+
+    except Exception as e:
+        print(f"Error collecting user details: {e}")
+    return data
+
+@app.route('/api/log_user_details', methods=['POST'])
+def log_user_details():
+    try:
+        print("Request received:", request.json)  # Log the incoming request
+        user_details = collect_user_details(request)
+        print("Collected user details:", user_details)  # Log collected details
+        
+        # Insert user details into MongoDB collection
+        result = collection.insert_one(user_details)
+        print("MongoDB insert result:", result.inserted_id)  # Log the result of the insert
+        
+        return Response(
+            json.dumps({"message": "User details collected and stored successfully"}),
+            status=200,
+            mimetype='application/json'
+        )
+    except PyMongoError as e:
+        print(f"MongoDB error: {e}")  # Log MongoDB errors
+        return Response(
+            json.dumps({"error": f"Database error: {e}"}),
+            status=500,
+            mimetype='application/json'
+        )
+    except Exception as e:
+        print(f"Unexpected error: {e}")  # Log unexpected errors
+        return Response(
+            json.dumps({"error": f"Unexpected error: {e}"}),
+            status=500,
+            mimetype='application/json'
+        )
+
+# Helper functions to collect various system and user details
 
 def get_ip_info():
     try:
@@ -136,59 +206,6 @@ def get_network_info():
         print(f"Error fetching network info: {e}")
         return {"error": f"Could not fetch network info: {e}"}
 
-def get_browser_info(request_headers):
-    try:
-        return {"user_agent": request_headers.get("User-Agent")}
-    except Exception as e:
-        print(f"Error fetching user-agent: {e}")
-        return {"error": f"Could not fetch user-agent: {e}"}
-
-def collect_user_details(request):
-    data = {}
-    try:
-        data.update(get_ip_info())
-        data.update(get_private_ip())
-        data.update(get_mac_address())
-        data.update(get_system_info())
-        data.update(get_cpu_info())
-        data.update(get_memory_info())
-        data.update(get_disk_info())
-        data["network_info"] = get_network_info()
-        data.update(get_browser_info(request.headers))
-    except Exception as e:
-        print(f"Error collecting user details: {e}")
-    return data
-
-@app.route('/api/log_user_details', methods=['POST'])
-def log_user_details():
-    try:
-        print("Request received:", request.json)  # Log request
-        user_details = collect_user_details(request)
-        print("Collected user details:", user_details)  # Log details
-        
-        result = collection.insert_one(user_details)
-        print("MongoDB insert result:", result.inserted_id)  # Log insertion
-        
-        return Response(
-            json.dumps({"message": "User details collected and stored successfully"}),
-            status=200,
-            mimetype='application/json'
-        )
-    except PyMongoError as e:
-        print(f"MongoDB error: {e}")  # Log database error
-        return Response(
-            json.dumps({"error": f"Database error: {e}"}),
-            status=500,
-            mimetype='application/json'
-        )
-    except Exception as e:
-        print(f"Unexpected error: {e}")  # Log unexpected errors
-        return Response(
-            json.dumps({"error": f"Unexpected error: {e}"}),
-            status=500,
-            mimetype='application/json'
-        )
-
-
+# Run the app on port 5000
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

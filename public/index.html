@@ -20,39 +20,48 @@
       // Show loading indicator
       document.getElementById('loading').style.display = 'block';
 
-      fetch('/api/log_user_details', { // Relative URL for API
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_agent: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-        }),
-      })
-      .then(response => {
-        // Hide loading indicator
-        document.getElementById('loading').style.display = 'none';
+      // Collect additional data
+      const browserLanguage = navigator.language || navigator.userLanguage;
+      const screenWidth = window.screen.width;
+      const screenHeight = window.screen.height;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      navigator.getBattery().then(battery => {
+        const batteryLevel = battery.level;
 
-        // Check if the response is valid JSON and status is OK
-        if (!response.ok) {
-          return Promise.reject('Failed to log user details. HTTP status: ' + response.status);
-        }
-        return response.json();  // Expect JSON response
-      })
-      .then(data => {
-        // Handle successful response
-        if (data.message) {
-          alert(data.message); // Show success message
-          console.log("User Details:", data); // Log response data to console
-        } else if (data.error) {
-          alert('Error: ' + data.error); // Show error if any
-        }
-      })
-      .catch(error => {
-        // Handle errors in the fetch process
-        alert('Error: ' + error);
-        console.error('API request failed:', error);
+        fetch('/api/log_user_details', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_agent: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+            browser_language: browserLanguage,
+            screen_width: screenWidth,
+            screen_height: screenHeight,
+            timezone: timezone,
+            battery_level: batteryLevel,
+          }),
+        })
+        .then(response => {
+          document.getElementById('loading').style.display = 'none';
+          if (!response.ok) {
+            return Promise.reject('Failed to log user details. HTTP status: ' + response.status);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.message) {
+            alert(data.message);
+            console.log("User Details:", data);
+          } else if (data.error) {
+            alert('Error: ' + data.error);
+          }
+        })
+        .catch(error => {
+          alert('Error: ' + error);
+          console.error('API request failed:', error);
+        });
       });
     }
   </script>
