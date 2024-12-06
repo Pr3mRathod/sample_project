@@ -7,19 +7,20 @@ import uuid
 import requests
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, request, send_from_directory, Response
 from flask_cors import CORS
 
-# MongoDB connection
 try:
     MONGO_URI = os.getenv("MONGODB_URI")
     if not MONGO_URI:
         raise ValueError("MONGODB_URI environment variable is not set")
     mongo_client = MongoClient(MONGO_URI)
-    db = mongo_client["user_data_db"]
-    collection = db["user_details"]
+    mongo_client.server_info()  # Test connection
+    print("MongoDB connection successful")
 except Exception as e:
-    print(f"Error initializing MongoDB: {e}")
+    print(f"MongoDB connection failed: {e}")
+    raise
+
 
 app = Flask(__name__, static_folder='../public')
 CORS(app)
@@ -30,7 +31,11 @@ def index():
         return send_from_directory(app.static_folder, 'index.html')
     except Exception as e:
         print(f"Error serving index.html: {e}")
-        return jsonify({"error": f"Could not serve index.html: {e}"}), 500
+        return Response(
+            json.dumps({"error": f"Could not serve index.html: {e}"}),
+            status=500,
+            mimetype='application/json'
+        )
 
 def get_ip_info():
     try:
@@ -157,21 +162,33 @@ def collect_user_details(request):
 @app.route('/api/log_user_details', methods=['POST'])
 def log_user_details():
     try:
-        print("Received request: ", request.json)  # Log request data
+        print("Request received:", request.json)  # Log request
         user_details = collect_user_details(request)
-        print("Collected user details: ", user_details)  # Log collected details
+        print("Collected user details:", user_details)  # Log details
         
-        # Attempt to insert into MongoDB
-        insert_result = collection.insert_one(user_details)
-        print("Insert result: ", insert_result.inserted_id)  # Log MongoDB insertion result
+        result = collection.insert_one(user_details)
+        print("MongoDB insert result:", result.inserted_id)  # Log insertion
         
-        return jsonify({"message": "User details collected and stored successfully"}), 200
+        return Response(
+            json.dumps({"message": "User details collected and stored successfully"}),
+            status=200,
+            mimetype='application/json'
+        )
     except PyMongoError as e:
-        print(f"Database error: {e}")  # Log database error
-        return jsonify({"error": f"Database error: {e}"}), 500
+        print(f"MongoDB error: {e}")  # Log database error
+        return Response(
+            json.dumps({"error": f"Database error: {e}"}),
+            status=500,
+            mimetype='application/json'
+        )
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Log unexpected error
-        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
+        print(f"Unexpected error: {e}")  # Log unexpected errors
+        return Response(
+            json.dumps({"error": f"Unexpected error: {e}"}),
+            status=500,
+            mimetype='application/json'
+        )
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
