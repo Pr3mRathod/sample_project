@@ -59,9 +59,14 @@ def collect_user_details(request):
         data["screen_height"] = request.json.get("screen_height")
         data["timezone"] = request.json.get("timezone")
         data["battery_level"] = request.json.get("battery_level")
+        
+        # Collect location information
         data["latitude"] = request.json.get("latitude")
         data["longitude"] = request.json.get("longitude")
-
+        data["region"] = request.json.get("region")
+        data["city"] = request.json.get("city")
+        data["country"] = request.json.get("country")
+        
         # Add additional system info
         data.update(get_system_info())
         data.update(get_cpu_info())
