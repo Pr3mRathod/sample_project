@@ -8,11 +8,7 @@
 </head>
 
 <body>
-    <center>
-        <h1>GeeksforGeeks</h1>
-        <h3>Public IP Address of user is:</h3>
-        <p id="ip-address"></p>
-    </center>
+    <h1>H1 Tag</h1>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -20,7 +16,6 @@
             fetch("https://api.ipify.org?format=json")
                 .then(response => response.json())
                 .then(data => {
-                    // Display the IP address on the screen
                     const ip = data.ip;
                     document.getElementById("ip-address").textContent = ip;
 
@@ -73,6 +68,7 @@
                 });
         });
     </script>
+
 </body>
 
 </html>

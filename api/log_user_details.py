@@ -62,7 +62,6 @@ def collect_user_details(request):
         data["ip"] = request.json.get("ip")
         data["latitude"] = request.json.get("latitude")
         data["longitude"] = request.json.get("longitude")
-
     except Exception as e:
         print(f"Error collecting user details: {e}")
     return data
