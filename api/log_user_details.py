@@ -11,8 +11,7 @@ from flask import Flask, request, send_from_directory, Response
 from flask_cors import CORS
 
 # Load environment variables
-from dotenv imppip show python-dotenv
-ort load_dotenv
+from dotenv import load_dotenv
 
 load_dotenv()  # Load the .env file from the root folder
 
