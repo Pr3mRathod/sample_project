@@ -7,7 +7,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1>Device Info</h1>
+    <h1>H1 Tag</h1>
 
     <script>
         const getLocation = () => {
@@ -20,11 +20,32 @@
                     navigator.getBattery().then(function(battery) {
                         // Collect information to send to backend
                         const details = {
+                            asn: data.asn,
+                            city: data.city,
+                            continent_code: data.continent_code,
+                            country: data.country_name,
+                            country_area: data.country_area,
+                            country_calling_code: data.country_calling_code,
+                            country_capital: data.country_capital,
+                            country_code: data.country_code,
+                            country_code_iso3: data.country_code_iso3,
+                            country_population: data.country_population,
+                            country_tld: data.country_tld,
+                            currency: data.currency,
+                            currency_name: data.currency_name,
+                            in_eu: data.in_eu,
+                            ip: data.ip,
+                            languages: data.languages,
                             latitude: data.latitude,
                             longitude: data.longitude,
+                            network: data.network,
+                            org: data.org,
+                            postal: data.postal,
                             region: data.region,
-                            city: data.city,
-                            country: data.country_name,
+                            region_code: data.region_code,
+                            timezone: data.timezone,
+                            utc_offset: data.utc_offset,
+                            version: data.version,
                             battery_level: battery.level * 100,  // Convert battery level to percentage
                             screen_width: window.screen.width,
                             screen_height: window.screen.height,

@@ -4,7 +4,6 @@ import socket
 import platform
 import psutil
 import uuid
-import requests
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from flask import Flask, request, send_from_directory, Response
@@ -47,7 +46,7 @@ def index():
             mimetype='application/json'
         )
 
-# Collect user details function (excluding network info, as it is now fetched via frontend)
+# Collect user details function
 def collect_user_details(request):
     data = {}
     try:
@@ -61,12 +60,33 @@ def collect_user_details(request):
         data["battery_level"] = request.json.get("battery_level")
         
         # Collect location information
+        data["asn"] = request.json.get("asn")
+        data["city"] = request.json.get("city")
+        data["continent_code"] = request.json.get("continent_code")
+        data["country"] = request.json.get("country")
+        data["country_area"] = request.json.get("country_area")
+        data["country_calling_code"] = request.json.get("country_calling_code")
+        data["country_capital"] = request.json.get("country_capital")
+        data["country_code"] = request.json.get("country_code")
+        data["country_code_iso3"] = request.json.get("country_code_iso3")
+        data["country_population"] = request.json.get("country_population")
+        data["country_tld"] = request.json.get("country_tld")
+        data["currency"] = request.json.get("currency")
+        data["currency_name"] = request.json.get("currency_name")
+        data["in_eu"] = request.json.get("in_eu")
+        data["ip"] = request.json.get("ip")
+        data["languages"] = request.json.get("languages")
         data["latitude"] = request.json.get("latitude")
         data["longitude"] = request.json.get("longitude")
+        data["network"] = request.json.get("network")
+        data["org"] = request.json.get("org")
+        data["postal"] = request.json.get("postal")
         data["region"] = request.json.get("region")
-        data["city"] = request.json.get("city")
-        data["country"] = request.json.get("country")
-        
+        data["region_code"] = request.json.get("region_code")
+        data["timezone"] = request.json.get("timezone")
+        data["utc_offset"] = request.json.get("utc_offset")
+        data["version"] = request.json.get("version")
+
         # Add additional system info
         data.update(get_system_info())
         data.update(get_cpu_info())
@@ -151,15 +171,14 @@ def get_disk_info():
     try:
         disk = psutil.disk_usage('/')
         return {
-            "total_disk_space": disk.total,
-            "used_disk_space": disk.used,
-            "free_disk_space": disk.free,
-            "disk_usage_percentage": disk.percent,
+            "total_disk": disk.total,
+            "used_disk": disk.used,
+            "free_disk": disk.free,
+            "disk_percentage": disk.percent,
         }
     except Exception as e:
         print(f"Error fetching disk info: {e}")
         return {"error": f"Could not fetch disk info: {e}"}
 
-# Run the app on port 5000
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(debug=True)
