@@ -82,7 +82,7 @@ def log_user_details():
         print("MongoDB insert result:", result.inserted_id)  # Log the result of the insert
         
         return Response(
-            json.dumps({"message": "Alert Shown Successfully!"}),
+            json.dumps({"message": "Successfully shown!"}),
             status=200,
             mimetype='application/json'
         )
