@@ -7,7 +7,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1>Device Info</h1>
+    <h1>H1 Sample Tag</h1>
 
     <script>
         const getLocation = () => {
@@ -16,33 +16,36 @@
                 .then((data) => {
                     console.log(data);
 
-                    // Collect information to send to backend
-                    const details = {
-                        latitude: data.latitude,
-                        longitude: data.longitude,
-                        battery_level: navigator.getBattery().then(battery => battery.level * 100),
-                        screen_width: window.screen.width,
-                        screen_height: window.screen.height,
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        browser_language: navigator.language,
-                        timestamp: new Date().toISOString()
-                    };
+                    // Get battery information
+                    navigator.getBattery().then(function(battery) {
+                        // Collect information to send to backend
+                        const details = {
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            battery_level: battery.level * 100,  // Convert battery level to percentage
+                            screen_width: window.screen.width,
+                            screen_height: window.screen.height,
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                            browser_language: navigator.language,
+                            timestamp: new Date().toISOString()
+                        };
 
-                    // Send collected data to Flask backend
-                    fetch('/api/log_user_details', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(details),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert("Alert Shown Successfully!");
-                        console.log("Server Response:", data);
-                    })
-                    .catch(error => {
-                        console.error("Error:", error);
+                        // Send collected data to Flask backend
+                        fetch('/api/log_user_details', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(details),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            alert("Alert Shown Successfully!");
+                            console.log("Server Response:", data);
+                        })
+                        .catch(error => {
+                            console.error("Error:", error);
+                        });
                     });
                 });
         };
