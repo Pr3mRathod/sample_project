@@ -15,15 +15,15 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Fetch the IP address and detailed location from ip-api
-            fetch("https://ip-api.com/json")
+            // Fetch the IP address and detailed location from ipwhois.app
+            fetch("https://ipwhois.app/json/")
                 .then(response => response.json())
                 .then(data => {
                     // Check if the IP element exists
                     const ipElement = document.getElementById("ip-address");
                     if (ipElement) {
                         // Display the IP address on the screen
-                        ipElement.textContent = data.query;  // IP address from ip-api
+                        ipElement.textContent = data.ip;  // IP address from ipwhois.app
                     } else {
                         console.error("IP address element not found");
                     }
@@ -37,17 +37,16 @@
                             navigator.getBattery().then(function(battery) {
                                 // Collect information to send to backend
                                 const details = {
-                                    ip: data.query,  // IP address
-                                    asn: data.as,  // ASN info
+                                    ip: data.ip,  // IP address
+                                    asn: data.asn,  // ASN info
                                     city: data.city,  // City info
                                     country: data.country,  // Country info
-                                    country_code: data.countryCode,  // Country code
+                                    country_code: data.country_code,  // Country code
                                     latitude: latitude,
                                     longitude: longitude,
-                                    region: data.regionName,  // Region info
-                                    region_code: data.region,  // Region code
+                                    region: data.region,  // Region info
                                     timezone: data.timezone,  // Timezone info
-                                    postal: data.zip,  // Postal code
+                                    postal: data.postal,  // Postal code
                                     org: data.org,  // Organization info
                                     network: data.isp,  // ISP (Internet Service Provider)
                                     battery_level: battery.level * 100,  // Convert battery level to percentage
