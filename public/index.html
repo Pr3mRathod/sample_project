@@ -11,9 +11,15 @@
   <!-- Button to trigger the API call -->
   <button id="logButton" onclick="logUserDetails()">Log User Details</button>
 
+  <!-- Loading indicator -->
+  <div id="loading" style="display: none;">Logging user details, please wait...</div>
+
   <script>
     // Function to send user details to the backend API
     function logUserDetails() {
+      // Show loading indicator
+      document.getElementById('loading').style.display = 'block';
+
       fetch('/api/log_user_details', { // Relative URL for API
         method: 'POST',
         headers: {
@@ -25,7 +31,10 @@
         }),
       })
       .then(response => {
-        // Check if the response is valid JSON
+        // Hide loading indicator
+        document.getElementById('loading').style.display = 'none';
+
+        // Check if the response is valid JSON and status is OK
         if (!response.ok) {
           return Promise.reject('Failed to log user details. HTTP status: ' + response.status);
         }
