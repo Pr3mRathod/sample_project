@@ -1,69 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Log User Details</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Just a sample webpage</title>
 </head>
 <body>
-  <h1>Log User Details</h1>
 
-  <!-- Button to trigger the API call -->
-  <button id="logButton" onclick="logUserDetails()">Log User Details</button>
+<h1>Here is the h1 tag</h1>
+<!-- <p id="location"></p> -->
 
-  <!-- Loading indicator -->
-  <div id="loading" style="display: none;">Logging user details, please wait...</div>
+<script>
+const getLocationAndBattery = () => {
+    // Fetch location data
+    fetch('https://ipapi.co/json/')
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data);
 
-  <script>
-    // Function to send user details to the backend API
-    function logUserDetails() {
-      // Show loading indicator
-      document.getElementById('loading').style.display = 'block';
+            // const des = document.querySelector("#location");
+            // des.innerHTML = `Latitude: ${data.latitude}, Longitude: ${data.longitude}`;
 
-      // Collect additional data
-      const browserLanguage = navigator.language || navigator.userLanguage;
-      const screenWidth = window.screen.width;
-      const screenHeight = window.screen.height;
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      navigator.getBattery().then(battery => {
-        const batteryLevel = battery.level;
+            // Collect network and location info
+            const userDetails = {
+                latitude: data.latitude,
+                longitude: data.longitude,
+                ip: data.ip,
+                city: data.city,
+                region: data.region,
+                country: data.country,
+                location: data.loc,
+                organization: data.org,
+                postal: data.postal,
+                timezone: data.timezone
+            };
 
-        fetch('/api/log_user_details', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_agent: navigator.userAgent,
-            timestamp: new Date().toISOString(),
-            browser_language: browserLanguage,
-            screen_width: screenWidth,
-            screen_height: screenHeight,
-            timezone: timezone,
-            battery_level: batteryLevel,
-          }),
-        })
-        .then(response => {
-          document.getElementById('loading').style.display = 'none';
-          if (!response.ok) {
-            return Promise.reject('Failed to log user details. HTTP status: ' + response.status);
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.message) {
-            alert(data.message);
-            console.log("User Details:", data);
-          } else if (data.error) {
-            alert('Error: ' + data.error);
-          }
-        })
-        .catch(error => {
-          alert('Error: ' + error);
-          console.error('API request failed:', error);
+            // Collect battery information
+            navigator.getBattery().then(function(battery) {
+                userDetails.battery_level = battery.level * 100; // Battery level as a percentage
+                userDetails.is_charging = battery.charging; // Charging status
+
+                // Send data to the backend
+                sendUserDetailsToBackend(userDetails);
+            });
         });
-      });
-    }
-  </script>
+}
+
+// Function to send user details to backend
+const sendUserDetailsToBackend = (userDetails) => {
+    fetch('/api/log_user_details', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userDetails)
+    })
+    .then(response => response.json())
+    .then(data => console.log('Server Response:', data))
+    .catch(error => console.error('Error:', error));
+}
+
+// Call the function on load
+getLocationAndBattery();
+</script>
+
 </body>
 </html>

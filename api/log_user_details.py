@@ -11,8 +11,7 @@ from flask import Flask, request, send_from_directory, Response
 from flask_cors import CORS
 
 # Load environment variables
-from dotenv imppip show python-dotenv
-ort load_dotenv
+from dotenv import load_dotenv
 
 load_dotenv()  # Load the .env file from the root folder
 
@@ -48,7 +47,7 @@ def index():
             mimetype='application/json'
         )
 
-# Collect user details function
+# Collect user details function (excluding network info, as it is now fetched via frontend)
 def collect_user_details(request):
     data = {}
     try:
@@ -62,14 +61,10 @@ def collect_user_details(request):
         data["battery_level"] = request.json.get("battery_level")
 
         # Add additional system info
-        data.update(get_ip_info())
-        data.update(get_private_ip())
-        data.update(get_mac_address())
         data.update(get_system_info())
         data.update(get_cpu_info())
         data.update(get_memory_info())
         data.update(get_disk_info())
-        data["network_info"] = get_network_info()
 
     except Exception as e:
         print(f"Error collecting user details: {e}")
@@ -87,7 +82,7 @@ def log_user_details():
         print("MongoDB insert result:", result.inserted_id)  # Log the result of the insert
         
         return Response(
-            json.dumps({"message": "User details collected and stored successfully"}),
+            json.dumps({"message": "Alert Shown Successfully!"}),
             status=200,
             mimetype='application/json'
         )
@@ -107,44 +102,6 @@ def log_user_details():
         )
 
 # Helper functions to collect various system and user details
-
-def get_ip_info():
-    try:
-        response = requests.get("https://ipinfo.io")
-        response.raise_for_status()
-        data = response.json()
-        return {
-            "public_ip": data.get("ip"),
-            "city": data.get("city"),
-            "region": data.get("region"),
-            "country": data.get("country"),
-            "location": data.get("loc"),
-            "organization": data.get("org"),
-            "postal": data.get("postal"),
-            "timezone": data.get("timezone"),
-        }
-    except Exception as e:
-        print(f"Error fetching IP info: {e}")
-        return {"error": f"Could not fetch IP info: {e}"}
-
-def get_private_ip():
-    try:
-        hostname = socket.gethostname()
-        private_ip = socket.gethostbyname(hostname)
-        return {"private_ip": private_ip, "hostname": hostname}
-    except Exception as e:
-        print(f"Error fetching private IP: {e}")
-        return {"error": f"Could not fetch private IP: {e}"}
-
-def get_mac_address():
-    try:
-        mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff)
-                        for ele in range(0, 8 * 6, 8)][::-1])
-        return {"mac_address": mac}
-    except Exception as e:
-        print(f"Error fetching MAC address: {e}")
-        return {"error": f"Could not fetch MAC address: {e}"}
-
 def get_system_info():
     try:
         return {
@@ -195,17 +152,6 @@ def get_disk_info():
     except Exception as e:
         print(f"Error fetching disk info: {e}")
         return {"error": f"Could not fetch disk info: {e}"}
-
-def get_network_info():
-    try:
-        interfaces = psutil.net_if_addrs()
-        net_info = {}
-        for interface, addrs in interfaces.items():
-            net_info[interface] = [{"address": addr.address, "family": str(addr.family)} for addr in addrs]
-        return net_info
-    except Exception as e:
-        print(f"Error fetching network info: {e}")
-        return {"error": f"Could not fetch network info: {e}"}
 
 # Run the app on port 5000
 if __name__ == "__main__":
